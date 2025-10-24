@@ -191,7 +191,7 @@ class AuditLog(Base):
     quota_used = Column(Integer)
     status = Column(String(50))  # success, error, partial
     error_message = Column(Text)
-    metadata = Column(JSON)
+    audit_metadata = Column(JSON)
 
 
 class Cache(Base):

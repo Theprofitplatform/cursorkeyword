@@ -1,5 +1,5 @@
 """Content brief generator."""
-from typing import List, Dict, Optional, Set
+from typing import List, Dict, Optional, Set, Tuple
 import re
 
 
