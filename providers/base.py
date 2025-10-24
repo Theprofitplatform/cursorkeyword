@@ -84,8 +84,9 @@ class BaseProvider:
             )
             db.add(log)
             db.commit()
-    
-    def with_retry(self, max_retries: int = 3, backoff_factor: float = 2.0):
+
+    @staticmethod
+    def with_retry(max_retries: int = 3, backoff_factor: float = 2.0):
         """Decorator for retry with exponential backoff."""
         def decorator(func):
             @wraps(func)
