@@ -1,121 +1,240 @@
-# Quick Start Guide
+# Keyword Research Tool - Quick Start Guide
 
-Get up and running in 5 minutes.
-
-## Step 1: Install (2 minutes)
+## 🚀 Your First Project (30 Seconds)
 
 ```bash
-# Clone and enter directory
-git clone <repo-url>
-cd cursorkeyword
-
-# Create virtual environment
-python3 -m venv venv
+# Make sure venv is activated
 source venv/bin/activate
 
-# Install dependencies
-pip install -r requirements.txt
+# Create your first project
+python3 cli.py create \
+  --name "My First Research Project" \
+  --seeds "seo tools,keyword research" \
+  --geo US \
+  --focus informational
 
-# Download NLP model
-python -m spacy download en_core_web_sm
+# View results
+python3 cli.py report <project_id>
+
+# Export to CSV
+python3 cli.py export <project_id>
 ```
 
-## Step 2: Configure (1 minute)
+---
 
+## 📋 Common Use Cases
+
+### Informational Content (Blogs, Guides, How-Tos)
 ```bash
-# Copy environment file
-cp .env.example .env
-
-# Edit .env and add your SerpAPI key
-# Get free key at: https://serpapi.com/users/sign_up
-nano .env
+python3 cli.py create \
+  --name "Blog Strategy - Q1 2025" \
+  --seeds "project management tips,agile methodology" \
+  --geo US \
+  --focus informational
 ```
 
-Minimum config (add to `.env`):
-```
-SERPAPI_API_KEY=your_key_here
-```
+**Best for:** Educational content, tutorials, thought leadership
 
-## Step 3: Initialize (30 seconds)
+---
 
+### Commercial Content (Product Reviews, Comparisons)
 ```bash
-python cli.py init
-```
-
-## Step 4: Run First Project (2 minutes)
-
-```bash
-python cli.py create \
-  --name "SEO Tools Research" \
-  --seeds "seo tools,keyword research,rank tracking" \
+python3 cli.py create \
+  --name "Best Software Reviews" \
+  --seeds "best crm software,top project tools" \
   --geo US \
   --focus commercial
 ```
 
-This will:
-- ✅ Expand 3 seeds into 200-500 keywords
-- ✅ Analyze SERP data and features
-- ✅ Score difficulty and opportunity
-- ✅ Cluster into topics
-- ✅ Generate content briefs
-
-## Step 5: View Results
-
-```bash
-# See summary report
-python cli.py report 1
-
-# Export to CSV
-python cli.py export 1 --format csv --output results.csv
-
-# Generate content calendar
-python cli.py calendar 1 --weeks 12
-```
-
-## Next Steps
-
-### Export to Google Sheets
-
-1. Set up Google Service Account
-2. Add credentials path to `.env`
-3. Run: `python cli.py export 1 --format sheets`
-
-### Export to Notion
-
-1. Get Notion API key and database ID
-2. Add to `.env`:
-   ```
-   NOTION_API_KEY=your_key
-   NOTION_DATABASE_ID=your_db_id
-   ```
-3. Run: `python cli.py export 1 --format notion`
-
-### Advanced Features
-
-- **Competitor Analysis**: Extract keywords from competitor sites
-- **Local SEO**: Geographic keyword expansion
-- **Custom Clustering**: Adjust thresholds for your niche
-- **WordPress Integration**: Export directly to WP drafts
-
-See full documentation in `README.md`.
-
-## Common Issues
-
-**"Too many requests"**
-→ Reduce rate limits in `.env`
-
-**"No keywords found"**
-→ Add more diverse seed keywords
-
-**"Import errors"**
-→ Reinstall dependencies: `pip install -r requirements.txt --force-reinstall`
-
-## Support
-
-- 📖 Full docs: See README.md
-- 🐛 Issues: Open GitHub issue
-- 💬 Questions: Check troubleshooting section in README
+**Best for:** Review articles, comparison pages, buyer guides
 
 ---
 
-**You're ready!** Start researching keywords and planning content at scale.
+### Transactional Content (Product Pages, Pricing)
+```bash
+python3 cli.py create \
+  --name "E-commerce Product Research" \
+  --seeds "buy wireless headphones,bluetooth speaker deals" \
+  --geo US \
+  --focus transactional
+```
+
+**Best for:** Product pages, pricing pages, checkout flows
+
+---
+
+## 📊 Understanding Your Results
+
+### After Running a Project
+
+**You get 3 CSV files:**
+
+1. **keywords.csv** (92+ keywords)
+   - All discovered keywords
+   - Search volume, CPC, difficulty
+   - Intent classification
+   - Opportunity scores
+
+2. **briefs.csv** (50+ content briefs)
+   - Target keyword for each page
+   - Recommended word count
+   - Schema markup suggestions
+   - SERP features to target
+
+3. **calendar.csv** (20+ items)
+   - Publishing schedule
+   - Seasonal opportunities
+   - Topic distribution
+
+---
+
+## ⚡ Quick Reference
+
+### All CLI Commands
+```bash
+# List projects
+python3 cli.py list
+
+# View project report
+python3 cli.py report 3
+
+# Export project
+python3 cli.py export 3
+
+# Generate calendar
+python3 cli.py calendar 3
+
+# Initialize database (first time only)
+python3 cli.py init
+```
+
+---
+
+### Resume Interrupted Projects
+```bash
+# If a project crashes or is interrupted
+python3 cli.py create \
+  --name "Same Project Name" \
+  --seeds "same keywords" \
+  --resume  # ← Picks up where it left off
+```
+
+**8 Checkpoint Stages:**
+- created → expansion → metrics → processing → scoring → clustering → briefs → completed
+
+---
+
+## 🎯 What Makes a Good Seed Keyword?
+
+### ✅ Good Seeds
+- `project management software` - Specific but not too narrow
+- `social media marketing` - Clear topic with volume
+- `best crm tools` - Commercial intent clear
+
+### ❌ Avoid
+- `the` - Too broad, no direction
+- `ultra-specific-brand-model-xyz` - Too narrow, no expansion
+- `a,b,c,d,e` - Single letters, meaningless
+
+---
+
+## 💡 Pro Tips
+
+### Get More Keywords
+```bash
+# Use 3-5 related seeds for broader coverage
+--seeds "keyword research,seo tools,rank tracking,serp analysis,content optimization"
+```
+
+### Control Scope
+```bash
+# Fewer seeds = faster, more focused
+--seeds "project management"  # 5-8 min, 80-150 keywords
+
+# More seeds = slower, comprehensive
+--seeds "project management,team collaboration,productivity tools,workflow automation"  # 12-20 min, 200-400 keywords
+```
+
+### Monitor Progress
+- Checkpoints saved at each stage
+- See quota usage in final summary
+- Track API calls in real-time
+
+---
+
+## 🔧 Typical Workflow
+
+1. **Create Project**
+   ```bash
+   python3 cli.py create --name "Project" --seeds "keywords" --geo US
+   ```
+
+2. **Review Summary**
+   ```bash
+   python3 cli.py report <id>
+   # Shows: keywords count, intent distribution, top opportunities
+   ```
+
+3. **Export & Analyze**
+   ```bash
+   python3 cli.py export <id>
+   # Opens CSVs in Excel/Sheets
+   # Filter by difficulty < 30
+   # Sort by opportunity score
+   ```
+
+4. **Create Content Plan**
+   - Use briefs.csv for content team
+   - Use calendar.csv for scheduling
+   - Track in Notion/Asana/Trello
+
+---
+
+## 📈 Expected Results
+
+| Project Type | Keywords | Briefs | Duration |
+|-------------|----------|---------|----------|
+| Small (1-2 seeds) | 50-100 | 20-40 | 4-8 min |
+| Medium (3-4 seeds) | 100-200 | 40-80 | 8-15 min |
+| Large (5+ seeds) | 200-400 | 80-150 | 15-25 min |
+
+---
+
+## ⚠️ Common Issues & Solutions
+
+**"Google Trends rate limiting"**
+- **Normal behavior** - Tool continues with available data
+- **Impact:** Minimal (only affects trend_score)
+- **Fix:** Not needed
+
+**"No search volume data"**
+- **Cause:** Keywords too specific/local
+- **Fix:** Use broader seed keywords
+
+**"Too many/few keywords"**
+- **Too many:** Seeds too broad → use more specific seeds
+- **Too few:** Seeds too narrow → add related terms
+
+---
+
+## 📚 Full Documentation
+
+- **Export Schemas:** `EXPORTS.md` - Complete CSV field definitions
+- **Troubleshooting:** `OPERATIONS.md` - Common issues, solutions
+- **AI Integration:** `CLAUDE.md` - Working with Claude Code
+- **Full Setup:** `setup_local_deployment.sh` - Automated installation
+
+---
+
+## 🎉 You're Ready!
+
+```bash
+# Start your first real project now:
+python3 cli.py create \
+  --name "Client: [Name] - [Project Type]" \
+  --seeds "your,primary,keywords" \
+  --geo US \
+  --focus informational
+```
+
+**Last Updated:** 2025-10-25 | **Version:** 1.0 Production

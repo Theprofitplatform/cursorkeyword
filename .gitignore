@@ -156,3 +156,12 @@ tests/fixtures/cache/
 # Editor configs (track these)
 !.editorconfig
 !.gitignore
+
+# Test export CSVs
+*_keywords.csv
+*_briefs.csv
+*_calendar.csv
+Full_Integration_Test*.csv
+
+# Flask session
+instance/
