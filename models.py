@@ -25,6 +25,11 @@ class Project(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     settings = Column(JSON)  # Additional settings
+
+    # Pipeline checkpoint for resume functionality
+    last_checkpoint = Column(String(50))  # Stage name: expansion, metrics, processing, clustering, briefs
+    checkpoint_timestamp = Column(DateTime)
+    checkpoint_data = Column(JSON)  # Additional checkpoint state
     
     # Relationships
     keywords = relationship("Keyword", back_populates="project", cascade="all, delete-orphan")
@@ -59,6 +64,10 @@ class Keyword(Base):
     
     # Scoring
     difficulty = Column(Float)  # 0-100
+    difficulty_serp_strength = Column(Float)  # Component breakdown
+    difficulty_competition = Column(Float)  # Component breakdown
+    difficulty_serp_crowding = Column(Float)  # Component breakdown
+    difficulty_content_depth = Column(Float)  # Component breakdown
     traffic_potential = Column(Float)
     opportunity = Column(Float)
     

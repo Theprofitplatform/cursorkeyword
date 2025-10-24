@@ -31,47 +31,70 @@ class KeywordScorer:
     def __init__(self):
         pass
     
-    def calculate_difficulty(self, 
+    def calculate_difficulty(self,
                             serp_metrics: Dict,
-                            keyword: str) -> float:
+                            keyword: str,
+                            return_components: bool = False) -> Dict:
         """
-        Calculate difficulty score (0-100).
-        
+        Calculate difficulty score (0-100) with component breakdown.
+
         Inputs:
         - SERP strength (40%): homepage ratio, brands, exact-match titles
-        - Competition (30%): in-title presence
+        - Competition (30%): in-title presence (allintitle ratio)
         - SERP crowding (20%): ads + features
         - Content depth (10%): avg word count proxy
+
+        Returns:
+            If return_components=False: float (difficulty score)
+            If return_components=True: Dict with score and components
         """
-        
+
         organic_results = serp_metrics.get('organic_results', [])
         features = serp_metrics.get('features', [])
         ads_density = serp_metrics.get('ads_density', 0)
-        
+
         if not organic_results:
-            return 50.0  # Default medium difficulty
-        
-        # 1. SERP Strength (40%)
-        serp_strength = self._calculate_serp_strength(organic_results, features)
-        
-        # 2. Competition (30%)
-        competition = self._calculate_competition(organic_results, keyword)
-        
-        # 3. SERP Crowding (20%)
-        crowding = self._calculate_crowding(features, ads_density)
-        
-        # 4. Content Depth (10%)
-        content_depth = self._calculate_content_depth(organic_results)
-        
-        # Weighted score
+            default_result = {
+                'difficulty': 50.0,
+                'serp_strength': 0.5,
+                'competition': 0.5,
+                'crowding': 0.5,
+                'content_depth': 0.5
+            }
+            return default_result if return_components else 50.0
+
+        # 1. SERP Strength (40%) - normalized 0-1
+        serp_strength = self._calculate_serp_strength(organic_results, features) / 100.0
+
+        # 2. Competition (30%) - allintitle ratio, normalized 0-1
+        competition = self._calculate_competition(organic_results, keyword) / 100.0
+
+        # 3. SERP Crowding (20%) - normalized 0-1
+        crowding = self._calculate_crowding(features, ads_density) / 100.0
+
+        # 4. Content Depth (10%) - normalized 0-1
+        content_depth = self._calculate_content_depth(organic_results) / 100.0
+
+        # Weighted score (0-100)
         difficulty = (
-            serp_strength * 0.4 +
-            competition * 0.3 +
-            crowding * 0.2 +
-            content_depth * 0.1
+            serp_strength * 40.0 +
+            competition * 30.0 +
+            crowding * 20.0 +
+            content_depth * 10.0
         )
-        
-        return round(min(max(difficulty, 0), 100), 1)
+
+        difficulty = round(min(max(difficulty, 0), 100), 1)
+
+        if return_components:
+            return {
+                'difficulty': difficulty,
+                'serp_strength': round(serp_strength, 3),
+                'competition': round(competition, 3),
+                'crowding': round(crowding, 3),
+                'content_depth': round(content_depth, 3)
+            }
+
+        return difficulty
     
     def _calculate_serp_strength(self, results: List[Dict], 
                                 features: List[str]) -> float:

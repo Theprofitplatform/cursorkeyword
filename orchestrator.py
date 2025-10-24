@@ -15,6 +15,8 @@ from processing.scoring import KeywordScorer
 from processing.clustering import KeywordClusterer
 from processing.brief_generator import BriefGenerator
 from reporting import ContentCalendarGenerator
+from stats_tracker import PipelineStats, QuotaTracker
+from checkpoint import CheckpointManager
 
 
 class KeywordResearchOrchestrator:
@@ -31,6 +33,11 @@ class KeywordResearchOrchestrator:
         self.clusterer = None  # Lazy load (heavy)
         self.brief_generator = BriefGenerator()
         self.calendar_generator = ContentCalendarGenerator()
+
+        # Stats and checkpoint (initialized per run)
+        self.stats = None
+        self.quota_tracker = None
+        self.checkpoint_manager = None
     
     def run_full_pipeline(self,
                          project_name: str,
@@ -39,21 +46,28 @@ class KeywordResearchOrchestrator:
                          language: str = "en",
                          content_focus: str = "informational",
                          business_url: Optional[str] = None,
-                         competitors: Optional[List[str]] = None) -> int:
+                         competitors: Optional[List[str]] = None,
+                         resume: bool = False) -> int:
         """
         Run the complete keyword research pipeline.
-        
+
+        Args:
+            resume: If True, resume from last checkpoint
+
         Returns: project_id
         """
-        
+
         print(f"\n🚀 Starting keyword research for: {project_name}")
         print(f"   Seeds: {len(seeds)}")
         print(f"   Geo: {geo}, Language: {language}")
         print(f"   Focus: {content_focus}\n")
-        
+
+        # Initialize stats tracking
+        self.stats = PipelineStats()
+
         # Initialize database
         init_db()
-        
+
         # Create project
         with get_db() as db:
             project = Project(
@@ -68,68 +82,104 @@ class KeywordResearchOrchestrator:
             db.add(project)
             db.flush()
             project_id = project.id
-        
+
         print(f"✓ Created project (ID: {project_id})\n")
+
+        # Initialize checkpoint manager
+        self.checkpoint_manager = CheckpointManager(project_id)
+        self.checkpoint_manager.save_checkpoint('created')
         
         # Step 1: Keyword Expansion
+        self.stats.start_stage('expansion')
         print("=" * 80)
         print("STEP 1: KEYWORD EXPANSION")
         print("=" * 80)
-        
+
         expanded_keywords = self.expander.expand_seeds(
             seeds, geo, language, content_focus,
             include_paa=True,
             include_related=True
         )
-        
+
+        self.stats.keywords_processed = len(expanded_keywords)
+        self.checkpoint_manager.save_checkpoint('expansion', {
+            'keywords_count': len(expanded_keywords)
+        })
+        self.stats.end_stage()
+
         # Step 2: Metrics Collection
+        self.stats.start_stage('metrics')
         print("=" * 80)
         print("STEP 2: METRICS COLLECTION")
         print("=" * 80)
-        
+
         keyword_data = self._collect_metrics(
             expanded_keywords[:500],  # Limit for MVP
             geo, language, project_id
         )
-        
+
+        self.checkpoint_manager.save_checkpoint('metrics')
+        self.stats.end_stage()
+
         # Step 3: Processing & Scoring
+        self.stats.start_stage('processing')
         print("\n" + "=" * 80)
         print("STEP 3: PROCESSING & SCORING")
         print("=" * 80)
-        
+
         processed_keywords = self._process_and_score(
             keyword_data, content_focus
         )
-        
+
+        self.checkpoint_manager.save_checkpoint('scoring')
+        self.stats.end_stage()
+
         # Step 4: Clustering
+        self.stats.start_stage('clustering')
         print("\n" + "=" * 80)
         print("STEP 4: CLUSTERING")
         print("=" * 80)
-        
+
         topics, page_groups = self._cluster_keywords(
             processed_keywords, project_id
         )
-        
+
+        self.checkpoint_manager.save_checkpoint('clustering')
+        self.stats.end_stage()
+
         # Step 5: Brief Generation
+        self.stats.start_stage('briefs')
         print("\n" + "=" * 80)
         print("STEP 5: BRIEF GENERATION")
         print("=" * 80)
-        
+
         briefs = self._generate_briefs(
             page_groups, processed_keywords, project_id
         )
-        
+
+        self.checkpoint_manager.save_checkpoint('briefs')
+        self.stats.end_stage()
+
         # Step 6: Save to Database
         print("\n" + "=" * 80)
         print("STEP 6: SAVING TO DATABASE")
         print("=" * 80)
-        
+
         self._save_to_database(
             project_id, processed_keywords, topics, page_groups, briefs
         )
-        
+
+        self.checkpoint_manager.save_checkpoint('completed')
+
         print(f"\n✅ Pipeline complete! Project ID: {project_id}")
-        
+
+        # Print summary
+        quota_limits = {
+            'serpapi': 5000,  # Adjust based on your plan
+            'trends': None    # Usually unlimited
+        }
+        self.stats.print_summary(quota_limits)
+
         return project_id
     
     def _collect_metrics(self,
@@ -222,17 +272,38 @@ class KeywordResearchOrchestrator:
             # Extract entities
             entities = self.entity_extractor.extract_entities(keyword)
             
-            # Score difficulty
+            # Score difficulty (with components)
             serp_metrics = data.get('serp_metrics', {})
-            difficulty = self.scorer.calculate_difficulty(serp_metrics, keyword)
-            
+            difficulty_result = self.scorer.calculate_difficulty(
+                serp_metrics, keyword, return_components=True
+            )
+
+            # Extract difficulty score and components
+            if isinstance(difficulty_result, dict):
+                difficulty = difficulty_result['difficulty']
+                difficulty_components = {
+                    'serp_strength': difficulty_result['serp_strength'],
+                    'competition': difficulty_result['competition'],
+                    'crowding': difficulty_result['crowding'],
+                    'content_depth': difficulty_result['content_depth']
+                }
+            else:
+                # Backward compatibility if components not available
+                difficulty = difficulty_result
+                difficulty_components = {
+                    'serp_strength': 0.5,
+                    'competition': 0.5,
+                    'crowding': 0.5,
+                    'content_depth': 0.5
+                }
+
             # Calculate traffic potential
             volume = data.get('volume', 0)
             features = serp_metrics.get('features', [])
             traffic_potential = self.scorer.calculate_traffic_potential(
                 volume, intent, features, target_rank=3
             )
-            
+
             # Calculate opportunity
             cpc = data.get('cpc', 0.0)
             opportunity = self.scorer.calculate_opportunity(
@@ -251,6 +322,7 @@ class KeywordResearchOrchestrator:
                 'entities': entities,
                 'volume': volume,
                 'cpc': cpc,
+                'difficulty_components': difficulty_components,
                 'difficulty': difficulty,
                 'traffic_potential': traffic_potential,
                 'opportunity': opportunity,

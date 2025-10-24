@@ -30,7 +30,8 @@ def cli():
               default='informational', help='Content focus')
 @click.option('--url', help='Business URL')
 @click.option('--competitors', help='Competitor URLs (comma-separated)')
-def create(name, seeds, geo, language, focus, url, competitors):
+@click.option('--resume', is_flag=True, help='Resume from last checkpoint')
+def create(name, seeds, geo, language, focus, url, competitors, resume):
     """Create a new keyword research project."""
     
     # Parse inputs
@@ -52,7 +53,8 @@ def create(name, seeds, geo, language, focus, url, competitors):
             language=language,
             content_focus=focus,
             business_url=url,
-            competitors=competitor_list
+            competitors=competitor_list,
+            resume=resume
         )
         
         click.echo(f"\n✅ Project created successfully! ID: {project_id}")
