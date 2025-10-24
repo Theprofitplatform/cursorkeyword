@@ -14,7 +14,7 @@ class AutosuggestProvider(BaseProvider):
         self.bing_base_url = "https://api.bing.com/osjson.aspx"
         self.youtube_base_url = "https://suggestqueries.google.com/complete/search"
     
-    @BaseProvider.with_retry
+    @BaseProvider.with_retry()
     def get_google_suggestions(self, query: str, geo: str = "US", 
                                language: str = "en") -> List[str]:
         """Get Google autosuggest results."""
@@ -49,7 +49,7 @@ class AutosuggestProvider(BaseProvider):
             print(f"Google autosuggest error for '{query}': {e}")
             return []
     
-    @BaseProvider.with_retry
+    @BaseProvider.with_retry()
     def get_bing_suggestions(self, query: str) -> List[str]:
         """Get Bing autosuggest results."""
         cache_key = self._make_cache_key("bing", query)
@@ -78,7 +78,7 @@ class AutosuggestProvider(BaseProvider):
             print(f"Bing autosuggest error for '{query}': {e}")
             return []
     
-    @BaseProvider.with_retry
+    @BaseProvider.with_retry()
     def get_youtube_suggestions(self, query: str) -> List[str]:
         """Get YouTube autosuggest results."""
         cache_key = self._make_cache_key("youtube", query)

@@ -1,0 +1,11 @@
+layout_id,layout_name,serp_features,base_ctr_position_1,base_ctr_position_2,base_ctr_position_3,description
+1,informational_clean,"[]",31.7,24.7,18.7,"Clean SERP with no additional features"
+2,informational_featured_snippet,"[""featured_snippet""]",19.6,15.3,11.3,"Featured snippet present at position 0"
+3,commercial,"[""shopping""]",27.6,15.8,11.3,"Commercial intent with shopping results"
+4,local_with_map,"[""local_pack""]",12.0,9.0,6.5,"Local pack dominates above organic results"
+5,video_heavy,"[""videos"", ""video_carousel""]",22.4,17.2,12.8,"Video carousel present"
+6,image_heavy,"[""images"", ""image_pack""]",24.1,18.5,13.7,"Image pack present"
+7,paa_present,"[""people_also_ask""]",28.3,22.1,16.4,"People Also Ask boxes present"
+8,knowledge_graph,"[""knowledge_graph""]",18.2,14.6,10.9,"Knowledge graph dominates right side"
+9,news_results,"[""top_stories"", ""news""]",20.5,16.3,12.1,"News/Top Stories present"
+10,multi_feature,"[""featured_snippet"", ""people_also_ask"", ""related_searches""]",15.4,12.1,9.2,"Multiple SERP features present"

@@ -13,7 +13,7 @@ class SerpApiClient(BaseProvider):
         self.api_key = settings.serpapi_api_key
         self.base_url = "https://serpapi.com/search"
     
-    @BaseProvider.with_retry
+    @BaseProvider.with_retry()
     def search(self, query: str, geo: str = "US", language: str = "en",
                device: str = "desktop") -> Dict[str, Any]:
         """Execute a SERP search."""

@@ -19,7 +19,7 @@ class TrendsProvider(BaseProvider):
             self.pytrends = TrendReq(hl='en-US', tz=360)
         return self.pytrends
     
-    @BaseProvider.with_retry
+    @BaseProvider.with_retry()
     def get_interest_over_time(self, keywords: List[str], geo: str = "US",
                                timeframe: str = "today 12-m") -> pd.DataFrame:
         """Get interest over time for keywords."""
@@ -52,7 +52,7 @@ class TrendsProvider(BaseProvider):
             print(f"Trends error for {keywords}: {e}")
             return pd.DataFrame()
     
-    @BaseProvider.with_retry
+    @BaseProvider.with_retry()
     def get_trending_searches(self, geo: str = "US") -> List[str]:
         """Get current trending searches."""
         cache_key = self._make_cache_key("trending", geo)

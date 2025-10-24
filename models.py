@@ -25,6 +25,11 @@ class Project(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     settings = Column(JSON)  # Additional settings
+
+    # Pipeline checkpoint for resume functionality
+    last_checkpoint = Column(String(50))  # Stage name: expansion, metrics, processing, clustering, briefs
+    checkpoint_timestamp = Column(DateTime)
+    checkpoint_data = Column(JSON)  # Additional checkpoint state
     
     # Relationships
     keywords = relationship("Keyword", back_populates="project", cascade="all, delete-orphan")
@@ -59,6 +64,10 @@ class Keyword(Base):
     
     # Scoring
     difficulty = Column(Float)  # 0-100
+    difficulty_serp_strength = Column(Float)  # Component breakdown
+    difficulty_competition = Column(Float)  # Component breakdown
+    difficulty_serp_crowding = Column(Float)  # Component breakdown
+    difficulty_content_depth = Column(Float)  # Component breakdown
     traffic_potential = Column(Float)
     opportunity = Column(Float)
     
@@ -74,8 +83,8 @@ class Keyword(Base):
     
     # Relationships
     project = relationship("Project", back_populates="keywords")
-    topic = relationship("Topic", back_populates="keywords")
-    page_group = relationship("PageGroup", back_populates="keywords")
+    topic = relationship("Topic", back_populates="keywords", foreign_keys=[topic_id])
+    page_group = relationship("PageGroup", back_populates="keywords", foreign_keys=[page_group_id])
     
     # Indexes
     __table_args__ = (
@@ -182,7 +191,7 @@ class AuditLog(Base):
     quota_used = Column(Integer)
     status = Column(String(50))  # success, error, partial
     error_message = Column(Text)
-    metadata = Column(JSON)
+    audit_metadata = Column(JSON)
 
 
 class Cache(Base):
