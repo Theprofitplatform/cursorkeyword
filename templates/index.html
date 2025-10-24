@@ -105,12 +105,17 @@ function createProject(event) {
         if (data.success) {
             statusDiv.innerHTML = `<div class="alert alert-success">
                 ✅ ${data.message}<br>
-                <strong>Project ID:</strong> ${data.project_id}<br>
+                <strong>Job ID:</strong> ${data.job_id}<br>
                 <small>Processing in background... This may take 5-15 minutes.</small><br>
-                <a href="/projects" class="btn btn-secondary" style="margin-top: 10px;">View All Projects</a>
-                <a href="/project/${data.project_id}" class="btn" style="margin-top: 10px; margin-left: 10px;">View This Project</a>
+                <button onclick="checkJobStatus('${data.job_id}')" class="btn btn-secondary" style="margin-top: 10px;">Check Status</button>
+                <a href="/projects" class="btn" style="margin-top: 10px; margin-left: 10px;">View All Projects</a>
             </div>`;
             event.target.reset();
+
+            // Auto-check status every 10 seconds
+            const statusInterval = setInterval(() => {
+                checkJobStatus('${data.job_id}', statusInterval);
+            }, 10000);
         } else {
             statusDiv.innerHTML = `<div class="alert alert-error">❌ ${data.error}</div>`;
         }
@@ -122,6 +127,39 @@ function createProject(event) {
         submitBtn.disabled = false;
         submitBtn.textContent = '🚀 Create Project';
     });
+}
+
+function checkJobStatus(jobId, intervalId) {
+    fetch(`/api/job/${jobId}/status`)
+        .then(response => response.json())
+        .then(data => {
+            const statusDiv = document.getElementById('status');
+            let statusHtml = `<div class="alert alert-success">
+                <strong>Status:</strong> ${data.status}<br>
+                <strong>Job:</strong> ${data.name}<br>`;
+
+            if (data.last_checkpoint) {
+                statusHtml += `<strong>Checkpoint:</strong> ${data.last_checkpoint}<br>`;
+            }
+
+            if (data.status === 'completed' && data.project_id) {
+                statusHtml += `<br>✅ Project completed!<br>
+                    <a href="/project/${data.project_id}" class="btn" style="margin-top: 10px;">View Project Results</a>
+                    <a href="/projects" class="btn btn-secondary" style="margin-top: 10px; margin-left: 10px;">View All Projects</a>`;
+                if (intervalId) clearInterval(intervalId);
+            } else if (data.status === 'failed') {
+                statusHtml += `<br>❌ Error: ${data.error || 'Unknown error'}`;
+                if (intervalId) clearInterval(intervalId);
+            } else {
+                statusHtml += `<br><small>Processing... Check back in a moment.</small>`;
+            }
+
+            statusHtml += '</div>';
+            statusDiv.innerHTML = statusHtml;
+        })
+        .catch(error => {
+            console.error('Error checking status:', error);
+        });
 }
 </script>
 {% endblock %}

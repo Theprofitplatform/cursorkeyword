@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, jsonify, send_file, redirect,
 from flask_cors import CORS
 import threading
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from database import get_db
 from models import Project, Keyword
 from orchestrator import KeywordResearchOrchestrator
@@ -38,7 +38,7 @@ def projects_list():
                 'keyword_count': keyword_count,
                 'geo': p.geo,
                 'language': p.language,
-                'focus': p.focus or 'any',
+                'focus': p.content_focus or 'any',
                 'last_checkpoint': p.last_checkpoint or 'Not started',
                 'checkpoint_time': p.checkpoint_timestamp.strftime('%Y-%m-%d %H:%M') if p.checkpoint_timestamp else None
             })
@@ -91,7 +91,7 @@ def project_details(project_id):
             'created_at': project.created_at.strftime('%Y-%m-%d %H:%M') if project.created_at else 'N/A',
             'geo': project.geo,
             'language': project.language,
-            'focus': project.focus or 'any',
+            'focus': project.content_focus or 'any',
             'last_checkpoint': project.last_checkpoint or 'Not started',
             'keyword_count': len(all_keywords),
             'total_volume': total_volume,
@@ -122,57 +122,78 @@ def create_project():
     if not seed_list:
         return jsonify({'error': 'At least one seed keyword is required'}), 400
     
+    # Generate a temporary job ID
+    import random
+    temp_job_id = f"temp_{int(datetime.now().timestamp())}_{random.randint(1000, 9999)}"
+
+    # Start background job tracker
+    running_jobs[temp_job_id] = {
+        'status': 'running',
+        'start_time': datetime.now(),
+        'name': name,
+        'project_id': None
+    }
+
     def run_project():
         """Run project in background thread."""
+        project_id = None
         try:
             orchestrator = KeywordResearchOrchestrator()
-            project_id = orchestrator.create_project(
-                name=name,
+            project_id = orchestrator.run_full_pipeline(
+                project_name=name,
                 seeds=seed_list,
                 geo=geo,
                 language=language,
-                focus=focus if focus and focus != 'any' else None
+                content_focus=focus if focus and focus != 'any' else 'informational'
             )
-            
+
             # Update job status
-            if project_id in running_jobs:
-                running_jobs[project_id]['status'] = 'completed'
-                running_jobs[project_id]['end_time'] = datetime.now()
+            running_jobs[temp_job_id]['project_id'] = project_id
+            running_jobs[temp_job_id]['status'] = 'completed'
+            running_jobs[temp_job_id]['end_time'] = datetime.now()
         except Exception as e:
-            if project_id in running_jobs:
-                running_jobs[project_id]['status'] = 'failed'
-                running_jobs[project_id]['error'] = str(e)
-    
-    # Create initial project record to get ID
-    with get_db() as db:
-        project = Project(
-            name=name,
-            seeds=seed_list,
-            geo=geo,
-            language=language,
-            focus=focus if focus and focus != 'any' else None,
-            created_at=datetime.utcnow()
-        )
-        db.add(project)
-        db.commit()
-        project_id = project.id
-    
-    # Start background job
-    running_jobs[project_id] = {
-        'status': 'running',
-        'start_time': datetime.now(),
-        'name': name
-    }
+            running_jobs[temp_job_id]['status'] = 'failed'
+            running_jobs[temp_job_id]['error'] = str(e)
+            if project_id:
+                running_jobs[temp_job_id]['project_id'] = project_id
     
     thread = threading.Thread(target=run_project)
     thread.daemon = True
     thread.start()
-    
+
     return jsonify({
         'success': True,
-        'project_id': project_id,
-        'message': f'Project "{name}" created and processing started'
+        'job_id': temp_job_id,
+        'message': f'Project "{name}" processing started. Check /api/job/{temp_job_id}/status for progress.'
     })
+
+
+@app.route('/api/job/<job_id>/status')
+def job_status(job_id):
+    """Get job processing status by job ID."""
+    job = running_jobs.get(job_id, {})
+    if not job:
+        return jsonify({'error': 'Job not found'}), 404
+
+    response = {
+        'job_id': job_id,
+        'name': job.get('name'),
+        'status': job.get('status', 'unknown'),
+        'start_time': job.get('start_time').isoformat() if job.get('start_time') else None,
+        'end_time': job.get('end_time').isoformat() if job.get('end_time') else None,
+        'project_id': job.get('project_id'),
+        'error': job.get('error')
+    }
+
+    # If we have a project_id, get the checkpoint info
+    if job.get('project_id'):
+        with get_db() as db:
+            project = db.query(Project).filter(Project.id == job['project_id']).first()
+            if project:
+                response['last_checkpoint'] = project.last_checkpoint
+                response['checkpoint_time'] = project.checkpoint_timestamp.isoformat() if project.checkpoint_timestamp else None
+
+    return jsonify(response)
 
 
 @app.route('/api/project/<int:project_id>/status')
@@ -182,16 +203,12 @@ def project_status(project_id):
         project = db.query(Project).filter(Project.id == project_id).first()
         if not project:
             return jsonify({'error': 'Project not found'}), 404
-        
-        job_status = running_jobs.get(project_id, {})
-        
+
         return jsonify({
             'project_id': project_id,
             'name': project.name,
             'last_checkpoint': project.last_checkpoint,
-            'checkpoint_time': project.checkpoint_timestamp.isoformat() if project.checkpoint_timestamp else None,
-            'job_status': job_status.get('status', 'unknown'),
-            'start_time': job_status.get('start_time').isoformat() if job_status.get('start_time') else None
+            'checkpoint_time': project.checkpoint_timestamp.isoformat() if project.checkpoint_timestamp else None
         })
 
 
