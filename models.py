@@ -83,8 +83,8 @@ class Keyword(Base):
     
     # Relationships
     project = relationship("Project", back_populates="keywords")
-    topic = relationship("Topic", back_populates="keywords")
-    page_group = relationship("PageGroup", back_populates="keywords")
+    topic = relationship("Topic", back_populates="keywords", foreign_keys=[topic_id])
+    page_group = relationship("PageGroup", back_populates="keywords", foreign_keys=[page_group_id])
     
     # Indexes
     __table_args__ = (
