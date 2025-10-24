@@ -331,13 +331,110 @@ Track content outcomes:
 - Impressions after 28 days
 - Top-3 ranking share after 90 days
 
-## 🔒 Compliance
+## 🔒 Compliance & Privacy
 
-- Uses official APIs where available
-- Respects rate limits with token bucket
-- Provides data source transparency
-- Secure credential storage
-- User data deletion on request
+### Data Source Transparency
+
+Every API call is logged with full attribution. Query your data sources:
+
+```sql
+-- See which providers contributed to a project
+SELECT provider, COUNT(*) as calls, SUM(quota_consumed) as quota
+FROM audit_logs 
+WHERE project_id = 1 
+GROUP BY provider;
+```
+
+**Active Data Sources:**
+- **SerpAPI**: SERP results, PAA questions, related searches, SERP features
+- **Google Trends**: Seasonality analysis, trend direction
+- **Autosuggest APIs**: Google, Bing, YouTube keyword suggestions
+- **Google Ads** (optional): Official search volume and CPC data
+- **Search Console** (optional): Existing ranking data for your site
+
+All sources are documented in audit logs and can be exported for compliance reporting.
+
+### Telemetry & Privacy
+
+**Telemetry**: Disabled by default. When enabled (opt-in), anonymous usage statistics help improve the tool.
+
+```bash
+# In .env file:
+ENABLE_TELEMETRY=false  # Default: off
+```
+
+**What we collect (only if enabled):**
+- Feature usage counts (which commands run)
+- Error frequencies (for debugging)
+- Performance metrics (processing times)
+
+**What we NEVER collect:**
+- Your API keys or credentials
+- Your seed keywords or project data
+- SERP data or API responses
+- Any personally identifiable information
+
+**Data Source Ledger**: Every API call is logged locally in your `audit_logs` table:
+- Timestamp and duration
+- Provider name
+- Query parameters (sanitized)
+- Response status and quota consumed
+- Project association
+
+View your ledger:
+```bash
+python cli.py audit --last 7d
+```
+
+### Compliance Features
+
+- ✅ Uses official APIs where available (Google Ads, Sheets, Search Console)
+- ✅ Respects rate limits with token-bucket algorithm
+- ✅ Complete data source attribution and audit trail
+- ✅ Secure credential storage (environment variables only)
+- ✅ User data deletion support (`python cli.py delete <project_id>`)
+- ✅ Offline mode available (no API calls, local processing only)
+- ✅ Cache transparency (view and clear cached data)
+- ✅ Terms of Service compliance for all providers
+
+### Offline Mode
+
+Run without internet for privacy or testing:
+
+```bash
+# Use only cached data
+python cli.py create --name "Offline Project" \
+  --seeds "cached,keywords" \
+  --offline-mode
+
+# Or set in .env
+OFFLINE_MODE=true
+```
+
+In offline mode:
+- Uses cached SERP data only
+- Skips trend analysis
+- Performs clustering and scoring locally
+- No API calls or external requests
+- Ideal for sensitive projects or air-gapped environments
+
+### Data Deletion
+
+Complete removal of project data:
+
+```bash
+# Delete project and all associated data
+python cli.py delete <project_id> --confirm
+
+# Clear all caches
+python cli.py clear-cache --all
+```
+
+This removes:
+- All keywords, topics, and briefs
+- SERP snapshots and cached responses
+- Audit logs for that project
+- Generated exports (if stored locally)
 
 ## 🛠️ Troubleshooting
 

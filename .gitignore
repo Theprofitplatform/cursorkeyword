@@ -1,0 +1,158 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables (NEVER commit these!)
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Credentials (NEVER commit these!)
+credentials/
+*.pem
+*.key
+*.crt
+google_sheets_service_account.json
+google_ads_credentials.json
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+keyword_research.db
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Data directories
+data/raw/
+data/processed/
+data/exports/
+data/cache/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+.cache/
+
+# Test coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# Documentation builds
+docs/_build/
+site/
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# Backups
+*.bak
+*.backup
+*.old
+
+# Exports (optional - uncomment if you don't want to track exports)
+# exports/*.csv
+# exports/*.json
+# exports/*.xlsx
+
+# Large files
+*.zip
+*.tar.gz
+*.rar
+
+# Docker volumes
+postgres_data/
+redis_data/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Node (if you add a frontend later)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Secrets and API keys (extra protection)
+*secret*
+*password*
+*api_key*
+*token*
+*credentials*
+
+# BUT DO track these config files (exceptions to above rules)
+!config/
+!config/*.yaml
+!config/*.yml
+!.env.example
+!credentials/.gitkeep
+
+# Exclude test data
+tests/fixtures/*.db
+tests/fixtures/cache/
+
+# Exclude large models (download separately)
+*.model
+*.pkl
+*.joblib
+
+# Editor configs (track these)
+!.editorconfig
+!.gitignore
