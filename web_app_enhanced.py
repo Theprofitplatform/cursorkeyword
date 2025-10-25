@@ -436,8 +436,11 @@ def api_create_project():
     if not name or not seeds:
         return jsonify({'error': 'Name and seeds are required'}), 400
 
-    # Parse seeds
-    seed_list = [s.strip() for s in seeds.replace('\n', ',').split(',') if s.strip()]
+    # Parse seeds - handle both string and list input
+    if isinstance(seeds, list):
+        seed_list = [s.strip() for s in seeds if s.strip()]
+    else:
+        seed_list = [s.strip() for s in seeds.replace('\n', ',').split(',') if s.strip()]
 
     if not seed_list:
         return jsonify({'error': 'At least one seed keyword is required'}), 400
@@ -592,6 +595,128 @@ def api_export_project(project_id, export_type):
 
 
 # ============================================================================
+# API Routes - Automation
+# ============================================================================
+
+@app.route('/api/automation/discover-seeds', methods=['POST'])
+def api_discover_seeds():
+    """Auto-discover seed keywords from URL/competitors/niche."""
+    try:
+        from automation.seed_discoverer import AutonomousSeedDiscoverer
+
+        data = request.get_json()
+        url = data.get('url')
+        description = data.get('description')
+        competitors = data.get('competitors', [])
+        niche = data.get('niche')
+
+        discoverer = AutonomousSeedDiscoverer()
+        results = discoverer.discover_all(
+            business_url=url,
+            business_description=description,
+            competitors=competitors,
+            niche=niche
+        )
+
+        return jsonify({
+            'success': True,
+            'seeds': results
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/automation/project/<int:project_id>/schedule', methods=['POST'])
+def api_schedule_automation(project_id):
+    """Setup automation schedules for a project."""
+    try:
+        from automation.scheduler import setup_default_schedules
+
+        data = request.get_json()
+        frequency = data.get('frequency', 'weekly')
+
+        setup_default_schedules(project_id, frequency)
+
+        return jsonify({
+            'success': True,
+            'message': f'Scheduled {frequency} automation for project {project_id}'
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/automation/project/<int:project_id>/alerts', methods=['GET'])
+def api_get_alerts(project_id):
+    """Get opportunity alerts for a project."""
+    try:
+        from automation.alert_engine import OpportunityAlertEngine
+
+        engine = OpportunityAlertEngine()
+        alerts = engine.scan_project(project_id)
+
+        return jsonify({
+            'success': True,
+            'alerts': alerts
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/automation/project/<int:project_id>/gaps', methods=['GET'])
+def api_analyze_gaps(project_id):
+    """Analyze content gaps for a project."""
+    try:
+        from automation.gap_analyzer import ContentGapAnalyzer
+
+        analyzer = ContentGapAnalyzer()
+        results = analyzer.analyze_gaps(project_id, auto_import=True)
+
+        return jsonify({
+            'success': True,
+            **results
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/automation/project/<int:project_id>/sync-notion', methods=['POST'])
+def api_sync_notion(project_id):
+    """Sync project to Notion."""
+    try:
+        from automation.workflow_sync import WorkflowSync
+
+        sync = WorkflowSync()
+        results = sync.sync_to_notion(project_id, create_tasks=True)
+
+        return jsonify(results)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/automation/scheduler/jobs', methods=['GET'])
+def api_get_scheduler_jobs():
+    """Get all scheduled jobs."""
+    try:
+        from automation.scheduler import get_scheduler
+
+        scheduler = get_scheduler()
+        jobs = scheduler.list_jobs()
+
+        return jsonify({
+            'success': True,
+            'jobs': jobs
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================================
 # Main Entry Point
 # ============================================================================
 
@@ -601,11 +726,11 @@ if __name__ == '__main__':
     print("=" * 80)
     print()
     print("Backend API:        http://localhost:5000")
-    print("Frontend (dev):     http://localhost:3000")
+    print("Frontend (dev):     http://localhost:4000")
     print("WebSocket support:  Enabled")
     print()
     print("Press CTRL+C to stop the server")
     print("=" * 80)
 
-    # Run with SocketIO
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)
+    # Run with SocketIO (debug=False to avoid reloader issues in WSL)
+    socketio.run(app, debug=False, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)

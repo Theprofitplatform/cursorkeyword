@@ -12,6 +12,7 @@ import { IntentDistributionChart } from '@/components/charts/IntentDistributionC
 import { DifficultyVolumeChart } from '@/components/charts/DifficultyVolumeChart';
 import { OpportunityFunnelChart } from '@/components/charts/OpportunityFunnelChart';
 import { TrafficTimelineChart } from '@/components/charts/TrafficTimelineChart';
+import { AutomationPanel } from '@/components/AutomationPanel';
 import { exportApi } from '@/services/api';
 import { formatNumber } from '@/utils/format';
 
@@ -23,7 +24,7 @@ export const ProjectDashboard: React.FC = () => {
   const { data: keywordsData, isLoading: keywordsLoading } = useKeywords(projectId, { limit: 100 });
   const { data: analytics, isLoading: analyticsLoading } = useAnalytics(projectId);
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'keywords' | 'analytics'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'keywords' | 'analytics' | 'automation'>('overview');
 
   if (projectLoading) {
     return <LoadingSpinner message="Loading project..." />;
@@ -152,7 +153,7 @@ export const ProjectDashboard: React.FC = () => {
       {/* Tabs */}
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
-          {(['overview', 'keywords', 'analytics'] as const).map((tab) => (
+          {(['overview', 'keywords', 'analytics', 'automation'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -217,6 +218,10 @@ export const ProjectDashboard: React.FC = () => {
           <h2 className="text-xl font-bold mb-4">Advanced Analytics</h2>
           <p className="text-gray-600">Advanced analytics features coming soon...</p>
         </Card>
+      )}
+
+      {activeTab === 'automation' && (
+        <AutomationPanel projectId={projectId} />
       )}
     </div>
   );

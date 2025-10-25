@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { useCreateProject } from '@/hooks/useProjects';
 import { useJobUpdates } from '@/hooks/useRealtime';
 import { ProgressBar } from '../common/ProgressBar';
+import { SeedDiscovery } from '../SeedDiscovery';
 
 interface CreateProjectModalProps {
   onClose: () => void;
@@ -20,9 +21,15 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose 
     focus: 'informational',
   });
 
+  const [showSeedDiscovery, setShowSeedDiscovery] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const createProject = useCreateProject();
   const jobStatus = useJobUpdates(jobId);
+
+  const handleSeedsDiscovered = (seeds: string[]) => {
+    setFormData({ ...formData, seeds: seeds.join(', ') });
+    setShowSeedDiscovery(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,18 +88,36 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose 
             />
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Seed Keywords (comma or line separated)
-              </label>
-              <textarea
-                placeholder="best running shoes&#10;running shoes for beginners&#10;marathon training tips"
-                value={formData.seeds}
-                onChange={(e) => setFormData({ ...formData, seeds: e.target.value })}
-                required
-                disabled={isProcessing}
-                className="w-full rounded-lg border-2 border-gray-300 px-4 py-2 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                rows={5}
-              />
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Seed Keywords (comma or line separated)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowSeedDiscovery(!showSeedDiscovery)}
+                  disabled={isProcessing}
+                  className="text-sm text-primary-600 hover:text-primary-700 flex items-center gap-1 disabled:opacity-50"
+                >
+                  <Lightbulb className="w-4 h-4" />
+                  {showSeedDiscovery ? 'Manual Entry' : 'Auto-Discover'}
+                </button>
+              </div>
+
+              {showSeedDiscovery ? (
+                <div className="border-2 border-primary-200 rounded-lg p-4 mb-4">
+                  <SeedDiscovery onSeedsDiscovered={handleSeedsDiscovered} />
+                </div>
+              ) : (
+                <textarea
+                  placeholder="best running shoes&#10;running shoes for beginners&#10;marathon training tips"
+                  value={formData.seeds}
+                  onChange={(e) => setFormData({ ...formData, seeds: e.target.value })}
+                  required
+                  disabled={isProcessing}
+                  className="w-full rounded-lg border-2 border-gray-300 px-4 py-2 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  rows={5}
+                />
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
